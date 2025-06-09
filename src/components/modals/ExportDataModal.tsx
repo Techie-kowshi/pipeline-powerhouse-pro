@@ -95,7 +95,7 @@ export function ExportDataModal({ trigger }: ExportDataModalProps) {
               <Checkbox 
                 id="headers" 
                 checked={includeHeaders}
-                onCheckedChange={setIncludeHeaders}
+                onCheckedChange={(checked) => setIncludeHeaders(checked === true)}
               />
               <Label htmlFor="headers">Include column headers</Label>
             </div>
@@ -103,7 +103,7 @@ export function ExportDataModal({ trigger }: ExportDataModalProps) {
               <Checkbox 
                 id="compress" 
                 checked={compress}
-                onCheckedChange={setCompress}
+                onCheckedChange={(checked) => setCompress(checked === true)}
               />
               <Label htmlFor="compress">Compress output (ZIP)</Label>
             </div>
