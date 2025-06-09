@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { TemplateCard } from "@/components/templates/TemplateCard"
@@ -18,7 +19,13 @@ const templates = [
     rating: 4.8,
     uses: 1250,
     sources: ["Shopify API", "Google Analytics", "Customer Database"],
-    destinations: ["Data Warehouse", "Analytics Dashboard", "Email Reports"]
+    destinations: ["Data Warehouse", "Analytics Dashboard", "Email Reports"],
+    nodes: [
+      { id: "source-1", type: "source", name: "Shopify API", config: { connectionString: "https://shop.myshopify.com/admin/api", apiKey: "" }, position: { x: 100, y: 100 } },
+      { id: "source-2", type: "source", name: "Google Analytics", config: { viewId: "", credentials: "" }, position: { x: 100, y: 250 } },
+      { id: "transform-1", type: "transform", name: "Data Cleaner", config: { type: "clean", rules: "remove_duplicates,validate_emails" }, position: { x: 400, y: 175 } },
+      { id: "dest-1", type: "destination", name: "Data Warehouse", config: { connectionString: "postgresql://warehouse:5432/analytics", table: "sales_data" }, position: { x: 700, y: 175 } }
+    ]
   },
   {
     id: "2", 
@@ -29,7 +36,12 @@ const templates = [
     rating: 4.6,
     uses: 890,
     sources: ["CRM System", "Marketing Platform"],
-    destinations: ["Customer Database", "Analytics Platform"]
+    destinations: ["Customer Database", "Analytics Platform"],
+    nodes: [
+      { id: "source-1", type: "source", name: "CRM System", config: { connectionString: "https://api.crm.com/v1", apiKey: "" }, position: { x: 100, y: 100 } },
+      { id: "transform-1", type: "transform", name: "Data Mapper", config: { type: "map", rules: "standardize_fields" }, position: { x: 400, y: 100 } },
+      { id: "dest-1", type: "destination", name: "Customer Database", config: { connectionString: "mongodb://localhost:27017/customers", collection: "profiles" }, position: { x: 700, y: 100 } }
+    ]
   },
   {
     id: "3",
@@ -40,7 +52,13 @@ const templates = [
     rating: 4.9,
     uses: 567,
     sources: ["Accounting Software", "Bank APIs", "Transaction Logs"],
-    destinations: ["Financial Database", "Compliance Reports", "Executive Dashboard"]
+    destinations: ["Financial Database", "Compliance Reports", "Executive Dashboard"],
+    nodes: [
+      { id: "source-1", type: "source", name: "Accounting Software", config: { connectionString: "https://api.accounting.com", credentials: "" }, position: { x: 100, y: 100 } },
+      { id: "source-2", type: "source", name: "Bank APIs", config: { bankCode: "", apiKey: "" }, position: { x: 100, y: 250 } },
+      { id: "transform-1", type: "transform", name: "Compliance Checker", config: { type: "validate", rules: "sox_compliance,pci_dss" }, position: { x: 400, y: 175 } },
+      { id: "dest-1", type: "destination", name: "Financial Database", config: { connectionString: "postgresql://finance:5432/reports", table: "transactions" }, position: { x: 700, y: 175 } }
+    ]
   },
   {
     id: "4",
@@ -51,7 +69,12 @@ const templates = [
     rating: 4.7,
     uses: 743,
     sources: ["Twitter API", "Facebook API", "Instagram API"],
-    destinations: ["Analytics Database", "Marketing Dashboard"]
+    destinations: ["Analytics Database", "Marketing Dashboard"],
+    nodes: [
+      { id: "source-1", type: "source", name: "Twitter API", config: { bearerToken: "", searchTerms: "" }, position: { x: 100, y: 100 } },
+      { id: "transform-1", type: "transform", name: "Sentiment Analysis", config: { type: "analyze", model: "sentiment" }, position: { x: 400, y: 100 } },
+      { id: "dest-1", type: "destination", name: "Analytics Database", config: { connectionString: "mongodb://analytics:27017/social", collection: "posts" }, position: { x: 700, y: 100 } }
+    ]
   },
   {
     id: "5",
@@ -62,7 +85,12 @@ const templates = [
     rating: 4.5,
     uses: 324,
     sources: ["IoT Sensors", "MQTT Broker", "Device Registry"],
-    destinations: ["Time Series Database", "Alert System", "Monitoring Dashboard"]
+    destinations: ["Time Series Database", "Alert System", "Monitoring Dashboard"],
+    nodes: [
+      { id: "source-1", type: "source", name: "MQTT Broker", config: { brokerUrl: "mqtt://broker:1883", topics: "sensors/+/data" }, position: { x: 100, y: 100 } },
+      { id: "transform-1", type: "transform", name: "Anomaly Detector", config: { type: "detect", threshold: 3.0 }, position: { x: 400, y: 100 } },
+      { id: "dest-1", type: "destination", name: "Time Series Database", config: { connectionString: "influxdb://timeseries:8086/iot", measurement: "sensor_data" }, position: { x: 700, y: 100 } }
+    ]
   },
   {
     id: "6",
@@ -73,7 +101,12 @@ const templates = [
     rating: 4.4,
     uses: 456,
     sources: ["Application Logs", "Server Logs", "Error Tracking"],
-    destinations: ["Log Database", "Alert System", "Performance Dashboard"]
+    destinations: ["Log Database", "Alert System", "Performance Dashboard"],
+    nodes: [
+      { id: "source-1", type: "source", name: "Application Logs", config: { logPath: "/var/log/app/*.log", pattern: "json" }, position: { x: 100, y: 100 } },
+      { id: "transform-1", type: "transform", name: "Log Parser", config: { type: "parse", format: "apache_combined" }, position: { x: 400, y: 100 } },
+      { id: "dest-1", type: "destination", name: "Log Database", config: { connectionString: "elasticsearch://logs:9200/app_logs", index: "logs" }, position: { x: 700, y: 100 } }
+    ]
   }
 ]
 

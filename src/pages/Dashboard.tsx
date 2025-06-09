@@ -1,6 +1,5 @@
 
-import { StatsCards } from "@/components/dashboard/StatsCards"
-import { PipelineStatus } from "@/components/dashboard/PipelineStatus"
+import { DashboardStats } from "@/components/dashboard/DashboardStats"
 import { DataFlowChart } from "@/components/dashboard/DataFlowChart"
 import { RecentActivity } from "@/components/dashboard/RecentActivity"
 
@@ -15,15 +14,14 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stats Overview */}
-      <StatsCards />
+      {/* Enhanced Stats with Real Functionality */}
+      <DashboardStats />
 
       {/* Charts */}
       <DataFlowChart />
 
       {/* Status and Activity */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <PipelineStatus />
         <RecentActivity />
       </div>
     </div>

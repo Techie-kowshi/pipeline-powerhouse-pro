@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
-import { PipelineCanvas } from "@/components/builder/PipelineCanvas"
+import { DraggablePipelineCanvas } from "@/components/builder/DraggablePipelineCanvas"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -90,6 +91,7 @@ export default function PipelineBuilder() {
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [pipelineNodes, setPipelineNodes] = useState<PipelineNode[]>([])
   const [isSaved, setIsSaved] = useState(true)
+  const [templateNodes, setTemplateNodes] = useState<any[]>([])
 
   // Load template data if navigated from templates
   useEffect(() => {
@@ -98,44 +100,46 @@ export default function PipelineBuilder() {
       setPipelineName(template.name)
       setDescription(template.description)
       
-      // Create nodes based on template
-      const nodes: PipelineNode[] = []
-      
-      // Add source nodes
-      template.sources.forEach((source: string, index: number) => {
+      // Use template nodes if available
+      if (template.nodes) {
+        setTemplateNodes(template.nodes)
+      } else {
+        // Fallback to creating nodes from sources/destinations
+        const nodes: any[] = []
+        
+        template.sources?.forEach((source: string, index: number) => {
+          nodes.push({
+            id: `source-${index}`,
+            type: 'source',
+            name: source,
+            config: {},
+            position: { x: 100 + (index * 300), y: 100 },
+            status: 'idle'
+          })
+        })
+        
         nodes.push({
-          id: `source-${index}`,
-          type: 'source',
-          name: source,
+          id: 'transform-1',
+          type: 'transform',
+          name: 'Data Processor',
           config: {},
-          position: { x: 100 + (index * 300), y: 100 },
+          position: { x: 400, y: 200 },
           status: 'idle'
         })
-      })
-      
-      // Add transform node
-      nodes.push({
-        id: 'transform-1',
-        type: 'transform',
-        name: 'Data Processor',
-        config: {},
-        position: { x: 400, y: 200 },
-        status: 'idle'
-      })
-      
-      // Add destination nodes
-      template.destinations.forEach((dest: string, index: number) => {
-        nodes.push({
-          id: `dest-${index}`,
-          type: 'destination',
-          name: dest,
-          config: {},
-          position: { x: 700 + (index * 300), y: 100 },
-          status: 'idle'
+        
+        template.destinations?.forEach((dest: string, index: number) => {
+          nodes.push({
+            id: `dest-${index}`,
+            type: 'destination',
+            name: dest,
+            config: {},
+            position: { x: 700 + (index * 300), y: 100 },
+            status: 'idle'
+          })
         })
-      })
-      
-      setPipelineNodes(nodes)
+        
+        setTemplateNodes(nodes)
+      }
       
       toast({
         title: "Template Loaded",
@@ -145,7 +149,6 @@ export default function PipelineBuilder() {
   }, [location.state, toast])
 
   const handleSave = () => {
-    // Simulate saving pipeline to backend
     const pipelineData = {
       name: pipelineName,
       description,
@@ -155,7 +158,6 @@ export default function PipelineBuilder() {
       updated: new Date().toISOString()
     }
     
-    // Save to localStorage for demo purposes
     const savedPipelines = JSON.parse(localStorage.getItem('savedPipelines') || '[]')
     const existingIndex = savedPipelines.findIndex((p: any) => p.name === pipelineName)
     
@@ -174,50 +176,12 @@ export default function PipelineBuilder() {
     })
   }
 
-  const handleRun = () => {
-    if (pipelineNodes.length === 0) {
-      toast({
-        title: "No Pipeline",
-        description: "Add some nodes to your pipeline before running",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Simulate running pipeline
-    toast({
-      title: "Pipeline Started",
-      description: `Pipeline "${pipelineName}" is now running`,
-    })
-  }
-
   const handleComponentSelect = (categoryName: string, componentName: string) => {
     setSelectedComponent(`${categoryName}-${componentName}`)
   }
 
   const handleComponentUsed = () => {
     setSelectedComponent(null)
-    setIsSaved(false)
-  }
-
-  const handleNodeAdd = (node: PipelineNode) => {
-    setPipelineNodes(prev => [...prev, node])
-    setIsSaved(false)
-  }
-
-  // Mark as unsaved when pipeline properties change
-  const handleNameChange = (value: string) => {
-    setPipelineName(value)
-    setIsSaved(false)
-  }
-
-  const handleDescriptionChange = (value: string) => {
-    setDescription(value)
-    setIsSaved(false)
-  }
-
-  const handleScheduleChange = (value: string) => {
-    setSchedule(value)
     setIsSaved(false)
   }
 
@@ -248,10 +212,6 @@ export default function PipelineBuilder() {
             <Save className="h-4 w-4 mr-2" />
             {isSaved ? 'Saved' : 'Save'}
           </Button>
-          <Button onClick={handleRun}>
-            <Play className="h-4 w-4 mr-2" />
-            Run Pipeline
-          </Button>
         </div>
       </div>
 
@@ -259,10 +219,11 @@ export default function PipelineBuilder() {
       <div className="flex-1 grid grid-cols-12 gap-6">
         {/* Pipeline Canvas */}
         <div className="col-span-9">
-          <PipelineCanvas 
-            onNodeAdd={handleNodeAdd}
+          <DraggablePipelineCanvas 
             selectedComponent={selectedComponent}
             onComponentUsed={handleComponentUsed}
+            initialNodes={templateNodes}
+            onNodesChange={setPipelineNodes}
           />
         </div>
 
@@ -278,7 +239,10 @@ export default function PipelineBuilder() {
                 <Input 
                   id="pipeline-name" 
                   value={pipelineName}
-                  onChange={(e) => handleNameChange(e.target.value)}
+                  onChange={(e) => {
+                    setPipelineName(e.target.value)
+                    setIsSaved(false)
+                  }}
                   className="mt-1"
                 />
               </div>
@@ -288,7 +252,10 @@ export default function PipelineBuilder() {
                   id="description" 
                   placeholder="Describe your pipeline..." 
                   value={description}
-                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  onChange={(e) => {
+                    setDescription(e.target.value)
+                    setIsSaved(false)
+                  }}
                   className="mt-1"
                 />
               </div>
@@ -297,7 +264,10 @@ export default function PipelineBuilder() {
                 <Input 
                   id="schedule" 
                   value={schedule}
-                  onChange={(e) => handleScheduleChange(e.target.value)}
+                  onChange={(e) => {
+                    setSchedule(e.target.value)
+                    setIsSaved(false)
+                  }}
                   placeholder="Cron expression"
                   className="mt-1"
                 />
@@ -362,7 +332,7 @@ export default function PipelineBuilder() {
                             size="sm"
                             className={`w-full justify-start h-auto p-2 ${
                               selectedComponent === `${category.category}-${component.name}`
-                                ? 'bg-primary/10 text-primary'
+                                ? 'bg-primary/10 text-primary border border-primary/50'
                                 : ''
                             }`}
                             onClick={() => handleComponentSelect(category.category, component.name)}

@@ -1,10 +1,14 @@
-
+import { useState } from "react"
 import { ConnectionManager } from "@/components/connections/ConnectionManager"
 import { DataSourceCard } from "@/components/sources/DataSourceCard"
+import { ImportDataModal } from "@/components/modals/ImportDataModal"
+import { EnhancedExportModal } from "@/components/modals/EnhancedExportModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Search } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Search, Filter, Upload, Download } from "lucide-react"
 
 const dataSources = [
   {
@@ -46,6 +50,8 @@ const dataSources = [
 ]
 
 export default function DataSources() {
+  const [filter, setFilter] = useState("all")
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,13 +59,31 @@ export default function DataSources() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Data Sources</h1>
           <p className="text-muted-foreground mt-2">
-            Manage your data connections and sources
+            Connect and manage your data sources
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Data Source
-        </Button>
+        <div className="flex gap-2">
+          <ImportDataModal
+            trigger={
+              <Button variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Import Data
+              </Button>
+            }
+          />
+          <EnhancedExportModal
+            trigger={
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export Data
+              </Button>
+            }
+          />
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Source
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="sources" className="w-full">
