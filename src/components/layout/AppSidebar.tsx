@@ -3,11 +3,9 @@ import {
   Database, 
   Layout, 
   Settings, 
-  Search,
   Upload,
   Download,
   Monitor,
-  Server,
   FileCode,
   Terminal,
   List
@@ -23,6 +21,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { ImportDataModal } from "@/components/modals/ImportDataModal"
+import { ExportDataModal } from "@/components/modals/ExportDataModal"
+import { QueryBuilderModal } from "@/components/modals/QueryBuilderModal"
 
 const navigationItems = [
   {
@@ -94,22 +95,34 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Upload className="h-4 w-4" />
-                  <span>Import Data</span>
-                </SidebarMenuButton>
+                <ImportDataModal
+                  trigger={
+                    <SidebarMenuButton>
+                      <Upload className="h-4 w-4" />
+                      <span>Import Data</span>
+                    </SidebarMenuButton>
+                  }
+                />
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Download className="h-4 w-4" />
-                  <span>Export Results</span>
-                </SidebarMenuButton>
+                <ExportDataModal
+                  trigger={
+                    <SidebarMenuButton>
+                      <Download className="h-4 w-4" />
+                      <span>Export Results</span>
+                    </SidebarMenuButton>
+                  }
+                />
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Terminal className="h-4 w-4" />
-                  <span>Query Builder</span>
-                </SidebarMenuButton>
+                <QueryBuilderModal
+                  trigger={
+                    <SidebarMenuButton>
+                      <Terminal className="h-4 w-4" />
+                      <span>Query Builder</span>
+                    </SidebarMenuButton>
+                  }
+                />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
