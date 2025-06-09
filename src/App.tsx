@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import PipelineBuilder from "./pages/PipelineBuilder";
 import DataSources from "./pages/DataSources";
 import Templates from "./pages/Templates";
+import Monitoring from "./pages/Monitoring";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -34,7 +35,7 @@ const App = () => (
                   <Route path="/builder" element={<PipelineBuilder />} />
                   <Route path="/sources" element={<DataSources />} />
                   <Route path="/templates" element={<Templates />} />
-                  <Route path="/monitoring" element={<Dashboard />} />
+                  <Route path="/monitoring" element={<Monitoring />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

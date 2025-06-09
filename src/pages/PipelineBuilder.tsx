@@ -1,19 +1,148 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { PipelineCanvas } from "@/components/builder/PipelineCanvas"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Save, Play, Settings } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Save, Play, Settings, Database, FileCode, Server, Filter, BarChart } from "lucide-react"
 import { PipelineConfigModal } from "@/components/modals/PipelineConfigModal"
 import { useToast } from "@/hooks/use-toast"
 
+interface PipelineNode {
+  id: string
+  type: 'source' | 'transform' | 'destination'
+  name: string
+  config: any
+  position: { x: number; y: number }
+  status: 'idle' | 'running' | 'success' | 'error'
+}
+
+const componentLibrary = [
+  {
+    category: "Data Sources",
+    icon: Database,
+    color: "text-blue-400",
+    components: [
+      { name: "MongoDB", description: "NoSQL database connector" },
+      { name: "PostgreSQL", description: "Relational database" },
+      { name: "REST API", description: "HTTP API endpoint" },
+      { name: "CSV File", description: "Comma-separated values" },
+      { name: "Kafka", description: "Stream processing" }
+    ]
+  },
+  {
+    category: "Transformations",
+    icon: FileCode,
+    color: "text-purple-400",
+    components: [
+      { name: "Data Cleaner", description: "Remove duplicates, validate" },
+      { name: "Field Mapper", description: "Transform field names" },
+      { name: "Filter Rows", description: "Conditional filtering" },
+      { name: "Aggregator", description: "Group and summarize" },
+      { name: "JSON Parser", description: "Parse JSON fields" }
+    ]
+  },
+  {
+    category: "Destinations",
+    icon: Server,
+    color: "text-green-400",
+    components: [
+      { name: "Snowflake", description: "Cloud data warehouse" },
+      { name: "BigQuery", description: "Google analytics warehouse" },
+      { name: "S3 Bucket", description: "AWS object storage" },
+      { name: "Email Alert", description: "Send notifications" },
+      { name: "Webhook", description: "HTTP POST endpoint" }
+    ]
+  },
+  {
+    category: "Data Quality",
+    icon: Filter,
+    color: "text-yellow-400",
+    components: [
+      { name: "Validator", description: "Data validation rules" },
+      { name: "Profiler", description: "Data quality metrics" },
+      { name: "Anomaly Detector", description: "Detect outliers" },
+      { name: "Schema Enforcer", description: "Ensure data structure" }
+    ]
+  },
+  {
+    category: "Analytics",
+    icon: BarChart,
+    color: "text-orange-400",
+    components: [
+      { name: "Trend Analysis", description: "Time series analysis" },
+      { name: "Correlation", description: "Find relationships" },
+      { name: "Forecasting", description: "Predict future values" },
+      { name: "Clustering", description: "Group similar data" }
+    ]
+  }
+]
+
 export default function PipelineBuilder() {
+  const location = useLocation()
+  const { toast } = useToast()
+  
   const [pipelineName, setPipelineName] = useState("Customer Data ETL")
   const [description, setDescription] = useState("")
   const [schedule, setSchedule] = useState("0 0 * * *")
-  const { toast } = useToast()
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
+  const [pipelineNodes, setPipelineNodes] = useState<PipelineNode[]>([])
+
+  // Load template data if navigated from templates
+  useEffect(() => {
+    const template = location.state?.template
+    if (template) {
+      setPipelineName(template.name)
+      setDescription(template.description)
+      
+      // Create nodes based on template
+      const nodes: PipelineNode[] = []
+      
+      // Add source nodes
+      template.sources.forEach((source: string, index: number) => {
+        nodes.push({
+          id: `source-${index}`,
+          type: 'source',
+          name: source,
+          config: {},
+          position: { x: 100 + (index * 300), y: 100 },
+          status: 'idle'
+        })
+      })
+      
+      // Add transform node
+      nodes.push({
+        id: 'transform-1',
+        type: 'transform',
+        name: 'Data Processor',
+        config: {},
+        position: { x: 400, y: 200 },
+        status: 'idle'
+      })
+      
+      // Add destination nodes
+      template.destinations.forEach((dest: string, index: number) => {
+        nodes.push({
+          id: `dest-${index}`,
+          type: 'destination',
+          name: dest,
+          config: {},
+          position: { x: 700 + (index * 300), y: 100 },
+          status: 'idle'
+        })
+      })
+      
+      setPipelineNodes(nodes)
+      
+      toast({
+        title: "Template Loaded",
+        description: `${template.name} template has been applied to your pipeline`,
+      })
+    }
+  }, [location.state, toast])
 
   const handleSave = () => {
     toast({
@@ -29,11 +158,16 @@ export default function PipelineBuilder() {
     })
   }
 
-  const handleComponentAdd = (componentType: string) => {
+  const handleComponentSelect = (categoryName: string, componentName: string) => {
+    setSelectedComponent(`${categoryName}-${componentName}`)
     toast({
-      title: "Component Added",
-      description: `${componentType} component added to pipeline`,
+      title: "Component Selected",
+      description: `${componentName} from ${categoryName} is ready to be added`,
     })
+  }
+
+  const handleNodeAdd = (node: PipelineNode) => {
+    setPipelineNodes(prev => [...prev, node])
   }
 
   return (
@@ -70,7 +204,7 @@ export default function PipelineBuilder() {
       <div className="flex-1 grid grid-cols-12 gap-6">
         {/* Pipeline Canvas */}
         <div className="col-span-9">
-          <PipelineCanvas />
+          <PipelineCanvas onNodeAdd={handleNodeAdd} />
         </div>
 
         {/* Properties Panel */}
@@ -109,55 +243,83 @@ export default function PipelineBuilder() {
                   className="mt-1"
                 />
               </div>
+              
+              {/* Pipeline Stats */}
+              <div className="pt-4 border-t">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nodes:</span>
+                    <span className="text-foreground">{pipelineNodes.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sources:</span>
+                    <span className="text-foreground">
+                      {pipelineNodes.filter(n => n.type === 'source').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Transforms:</span>
+                    <span className="text-foreground">
+                      {pipelineNodes.filter(n => n.type === 'transform').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Destinations:</span>
+                    <span className="text-foreground">
+                      {pipelineNodes.filter(n => n.type === 'destination').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           <Card className="bg-card/50 border-border/50">
             <CardHeader>
               <CardTitle className="text-base">Component Library</CardTitle>
+              {selectedComponent && (
+                <Badge variant="secondary" className="mt-2">
+                  Selected: {selectedComponent.split('-').slice(1).join(' ')}
+                </Badge>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  size="sm"
-                  onClick={() => handleComponentAdd("Data Sources")}
-                >
-                  <span>📊 Data Sources</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  size="sm"
-                  onClick={() => handleComponentAdd("Transformations")}
-                >
-                  <span>🔄 Transformations</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  size="sm"
-                  onClick={() => handleComponentAdd("Destinations")}
-                >
-                  <span>📤 Destinations</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  size="sm"
-                  onClick={() => handleComponentAdd("Data Quality")}
-                >
-                  <span>🔍 Data Quality</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  size="sm"
-                  onClick={() => handleComponentAdd("Analytics")}
-                >
-                  <span>📈 Analytics</span>
-                </Button>
+              <div className="space-y-4">
+                {componentLibrary.map((category) => {
+                  const Icon = category.icon
+                  return (
+                    <div key={category.category}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className={`h-4 w-4 ${category.color}`} />
+                        <span className="text-sm font-medium text-foreground">
+                          {category.category}
+                        </span>
+                      </div>
+                      <div className="space-y-1 ml-6">
+                        {category.components.map((component) => (
+                          <Button
+                            key={component.name}
+                            variant="ghost"
+                            size="sm"
+                            className={`w-full justify-start h-auto p-2 ${
+                              selectedComponent === `${category.category}-${component.name}`
+                                ? 'bg-primary/10 text-primary'
+                                : ''
+                            }`}
+                            onClick={() => handleComponentSelect(category.category, component.name)}
+                          >
+                            <div className="text-left">
+                              <div className="text-xs font-medium">{component.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {component.description}
+                              </div>
+                            </div>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

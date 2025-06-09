@@ -1,9 +1,14 @@
 
+import { useState } from "react"
 import { TemplateCard } from "@/components/templates/TemplateCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Search } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Search, FileCode } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { useNavigate } from "react-router-dom"
 
 const templates = [
   {
@@ -75,6 +80,42 @@ const templates = [
 ]
 
 export default function Templates() {
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeCategory, setActiveCategory] = useState("all")
+  const { toast } = useToast()
+  const navigate = useNavigate()
+
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = activeCategory === "all" || 
+                           template.category.toLowerCase() === activeCategory.toLowerCase()
+    return matchesSearch && matchesCategory
+  })
+
+  const handleUseTemplate = (template: any) => {
+    // Navigate to pipeline builder with template data
+    navigate('/builder', { state: { template } })
+    toast({
+      title: "Template Applied",
+      description: `${template.name} has been loaded in the pipeline builder`,
+    })
+  }
+
+  const handlePreviewTemplate = (template: any) => {
+    setSelectedTemplate(template)
+    setPreviewOpen(true)
+  }
+
+  const createTemplate = () => {
+    toast({
+      title: "Create Template",
+      description: "Template creation wizard opened",
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -85,7 +126,7 @@ export default function Templates() {
             Pre-built templates to accelerate your data pipeline development
           </p>
         </div>
-        <Button>
+        <Button onClick={createTemplate}>
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
@@ -98,39 +139,103 @@ export default function Templates() {
           <Input 
             placeholder="Search templates..." 
             className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Tabs defaultValue="all" className="w-auto">
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-auto">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="ecommerce">E-commerce</TabsTrigger>
+            <TabsTrigger value="e-commerce">E-commerce</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
             <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsTrigger value="iot">IoT</TabsTrigger>
+            <TabsTrigger value="hr">HR</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {/* Templates Grid */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsContent value="all" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {templates.map((template) => (
-              <TemplateCard key={template.id} template={template} />
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="analytics" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {templates
-              .filter(template => template.category.toLowerCase() === "analytics")
-              .map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
-          </div>
-        </TabsContent>
-        {/* Add other category filters as needed */}
-      </Tabs>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredTemplates.map((template) => (
+          <TemplateCard 
+            key={template.id} 
+            template={template}
+            onUse={handleUseTemplate}
+            onPreview={handlePreviewTemplate}
+          />
+        ))}
+      </div>
+
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <FileCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No templates found</h3>
+          <p className="text-muted-foreground">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      )}
+
+      {/* Template Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCode className="h-5 w-5" />
+              Template Preview: {selectedTemplate?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTemplate && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{selectedTemplate.category}</Badge>
+                <span className="text-sm text-muted-foreground">
+                  Est. {selectedTemplate.estimatedTime} • Used {selectedTemplate.uses.toLocaleString()} times
+                </span>
+              </div>
+              
+              <p className="text-muted-foreground">{selectedTemplate.description}</p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Data Sources</h4>
+                  <div className="space-y-1">
+                    {selectedTemplate.sources.map((source: string) => (
+                      <div key={source} className="flex items-center gap-2 text-sm">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                        {source}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Destinations</h4>
+                  <div className="space-y-1">
+                    {selectedTemplate.destinations.map((dest: string) => (
+                      <div key={dest} className="flex items-center gap-2 text-sm">
+                        <div className="w-2 h-2 bg-green-400 rounded-full" />
+                        {dest}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button onClick={() => handleUseTemplate(selectedTemplate)} className="flex-1">
+                  Use This Template
+                </Button>
+                <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
