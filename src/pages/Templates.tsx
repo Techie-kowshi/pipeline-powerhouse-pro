@@ -1,119 +1,103 @@
-
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { TemplateCard } from "@/components/templates/TemplateCard"
+import { TemplatePreviewModal } from "@/components/modals/TemplatePreviewModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, FileCode } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { useNavigate } from "react-router-dom"
+import { Plus, Search, Filter } from "lucide-react"
 
 const templates = [
   {
     id: "1",
-    name: "Customer 360 Analytics",
-    description: "Complete customer data pipeline combining CRM, support tickets, and website analytics",
+    name: "E-commerce Analytics Pipeline",
+    description: "Complete analytics pipeline for e-commerce platforms with real-time sales tracking and customer behavior analysis",
     category: "Analytics",
     estimatedTime: "30 minutes",
     rating: 4.8,
-    uses: 1247,
-    sources: ["Salesforce", "Zendesk", "Google Analytics"],
-    destinations: ["Snowflake", "PowerBI"]
+    uses: 1250,
+    sources: ["Shopify API", "Google Analytics", "Customer Database"],
+    destinations: ["Data Warehouse", "Analytics Dashboard", "Email Reports"]
   },
   {
-    id: "2",
-    name: "E-commerce Data Warehouse",
-    description: "ETL pipeline for online retail data including orders, inventory, and customer behavior",
-    category: "E-commerce",
-    estimatedTime: "45 minutes",
+    id: "2", 
+    name: "Customer Data Sync",
+    description: "Synchronize customer data across multiple platforms with data validation and duplicate detection",
+    category: "Data Integration",
+    estimatedTime: "15 minutes",
     rating: 4.6,
-    uses: 892,
-    sources: ["Shopify", "Stripe", "Facebook Ads"],
-    destinations: ["BigQuery", "Tableau"]
+    uses: 890,
+    sources: ["CRM System", "Marketing Platform"],
+    destinations: ["Customer Database", "Analytics Platform"]
   },
   {
     id: "3",
     name: "Financial Reporting Pipeline",
-    description: "Automated financial data aggregation and reporting for compliance and analysis",
+    description: "Automated financial data processing with compliance checks and regulatory reporting features",
     category: "Finance",
-    estimatedTime: "60 minutes",
+    estimatedTime: "45 minutes", 
     rating: 4.9,
-    uses: 634,
-    sources: ["QuickBooks", "Stripe", "Bank APIs"],
-    destinations: ["Oracle DB", "Excel"]
+    uses: 567,
+    sources: ["Accounting Software", "Bank APIs", "Transaction Logs"],
+    destinations: ["Financial Database", "Compliance Reports", "Executive Dashboard"]
   },
   {
     id: "4",
-    name: "Marketing Attribution Model",
-    description: "Multi-touch attribution pipeline tracking customer journey across all channels",
+    name: "Social Media Analytics",
+    description: "Collect and analyze social media metrics across multiple platforms for brand monitoring",
     category: "Marketing",
-    estimatedTime: "40 minutes",
+    estimatedTime: "20 minutes",
     rating: 4.7,
-    uses: 567,
-    sources: ["Google Ads", "Facebook Ads", "Email Platform"],
-    destinations: ["Data Warehouse", "Analytics"]
+    uses: 743,
+    sources: ["Twitter API", "Facebook API", "Instagram API"],
+    destinations: ["Analytics Database", "Marketing Dashboard"]
   },
   {
     id: "5",
-    name: "IoT Sensor Data Processing",
-    description: "Real-time processing of IoT sensor data with anomaly detection and alerting",
+    name: "IoT Data Processing",
+    description: "Real-time processing of IoT sensor data with anomaly detection and alerting capabilities",
     category: "IoT",
-    estimatedTime: "50 minutes",
+    estimatedTime: "35 minutes",
     rating: 4.5,
-    uses: 423,
-    sources: ["MQTT", "InfluxDB", "Kafka"],
-    destinations: ["TimescaleDB", "Grafana"]
+    uses: 324,
+    sources: ["IoT Sensors", "MQTT Broker", "Device Registry"],
+    destinations: ["Time Series Database", "Alert System", "Monitoring Dashboard"]
   },
   {
     id: "6",
-    name: "HR Analytics Dashboard",
-    description: "Employee data pipeline for HR metrics, performance tracking, and workforce analytics",
-    category: "HR",
-    estimatedTime: "35 minutes",
+    name: "Log Analysis Pipeline",
+    description: "Parse and analyze application logs for error detection and performance monitoring",
+    category: "Monitoring",
+    estimatedTime: "25 minutes",
     rating: 4.4,
-    uses: 389,
-    sources: ["BambooHR", "Slack", "Jira"],
-    destinations: ["Data Warehouse", "Looker"]
+    uses: 456,
+    sources: ["Application Logs", "Server Logs", "Error Tracking"],
+    destinations: ["Log Database", "Alert System", "Performance Dashboard"]
   }
 ]
 
 export default function Templates() {
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
-  const [previewOpen, setPreviewOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeCategory, setActiveCategory] = useState("all")
-  const { toast } = useToast()
+  const [selectedCategory, setSelectedCategory] = useState("")
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null)
   const navigate = useNavigate()
 
+  const categories = [...new Set(templates.map(t => t.category))]
+  
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = activeCategory === "all" || 
-                           template.category.toLowerCase() === activeCategory.toLowerCase()
+    const matchesCategory = !selectedCategory || template.category === selectedCategory
     return matchesSearch && matchesCategory
   })
 
   const handleUseTemplate = (template: any) => {
-    // Navigate to pipeline builder with template data
     navigate('/builder', { state: { template } })
-    toast({
-      title: "Template Applied",
-      description: `${template.name} has been loaded in the pipeline builder`,
-    })
   }
 
   const handlePreviewTemplate = (template: any) => {
-    setSelectedTemplate(template)
-    setPreviewOpen(true)
-  }
-
-  const createTemplate = () => {
-    toast({
-      title: "Create Template",
-      description: "Template creation wizard opened",
-    })
+    setPreviewTemplate(template)
   }
 
   return (
@@ -123,16 +107,16 @@ export default function Templates() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Pipeline Templates</h1>
           <p className="text-muted-foreground mt-2">
-            Pre-built templates to accelerate your data pipeline development
+            Pre-built templates to get you started quickly
           </p>
         </div>
-        <Button onClick={createTemplate}>
+        <Button>
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -143,17 +127,43 @@ export default function Templates() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-auto">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="e-commerce">E-commerce</TabsTrigger>
-            <TabsTrigger value="finance">Finance</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
-            <TabsTrigger value="iot">IoT</TabsTrigger>
-            <TabsTrigger value="hr">HR</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category} value={category}>{category}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Category Badges */}
+      <div className="flex flex-wrap gap-2">
+        <Badge 
+          variant={selectedCategory === "" ? "default" : "outline"}
+          className="cursor-pointer"
+          onClick={() => setSelectedCategory("")}
+        >
+          All ({templates.length})
+        </Badge>
+        {categories.map(category => {
+          const count = templates.filter(t => t.category === category).length
+          return (
+            <Badge 
+              key={category}
+              variant={selectedCategory === category ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category} ({count})
+            </Badge>
+          )
+        })}
       </div>
 
       {/* Templates Grid */}
@@ -170,72 +180,17 @@ export default function Templates() {
 
       {filteredTemplates.length === 0 && (
         <div className="text-center py-12">
-          <FileCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No templates found</h3>
-          <p className="text-muted-foreground">
-            Try adjusting your search or filter criteria
-          </p>
+          <p className="text-muted-foreground">No templates found matching your criteria</p>
         </div>
       )}
 
       {/* Template Preview Modal */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileCode className="h-5 w-5" />
-              Template Preview: {selectedTemplate?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedTemplate && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{selectedTemplate.category}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  Est. {selectedTemplate.estimatedTime} • Used {selectedTemplate.uses.toLocaleString()} times
-                </span>
-              </div>
-              
-              <p className="text-muted-foreground">{selectedTemplate.description}</p>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Data Sources</h4>
-                  <div className="space-y-1">
-                    {selectedTemplate.sources.map((source: string) => (
-                      <div key={source} className="flex items-center gap-2 text-sm">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                        {source}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Destinations</h4>
-                  <div className="space-y-1">
-                    {selectedTemplate.destinations.map((dest: string) => (
-                      <div key={dest} className="flex items-center gap-2 text-sm">
-                        <div className="w-2 h-2 bg-green-400 rounded-full" />
-                        {dest}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button onClick={() => handleUseTemplate(selectedTemplate)} className="flex-1">
-                  Use This Template
-                </Button>
-                <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <TemplatePreviewModal 
+        isOpen={!!previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        template={previewTemplate}
+        onUse={handleUseTemplate}
+      />
     </div>
   )
 }

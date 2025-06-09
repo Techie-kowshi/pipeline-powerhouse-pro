@@ -1,10 +1,10 @@
-
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Database, FileCode, Server, Settings, Trash2, Play } from "lucide-react"
+import { Plus, Database, FileCode, Server, Settings, Trash2, Play, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { NodeConfigModal } from "@/components/modals/NodeConfigModal"
 
 interface PipelineNode {
   id: string
@@ -17,15 +17,17 @@ interface PipelineNode {
 
 interface PipelineCanvasProps {
   onNodeAdd?: (node: PipelineNode) => void
+  selectedComponent?: string | null
+  onComponentUsed?: () => void
 }
 
-export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
+export function PipelineCanvas({ onNodeAdd, selectedComponent, onComponentUsed }: PipelineCanvasProps) {
   const [nodes, setNodes] = useState<PipelineNode[]>([
     {
       id: '1',
       type: 'source',
       name: 'MongoDB Source',
-      config: { connectionString: 'mongodb://localhost:27017' },
+      config: { connectionString: 'mongodb://localhost:27017', database: 'mydb', collection: 'users' },
       position: { x: 100, y: 150 },
       status: 'success'
     },
@@ -33,7 +35,7 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
       id: '2',
       type: 'transform',
       name: 'Data Cleaner',
-      config: { operations: ['deduplicate', 'validate_emails'] },
+      config: { type: 'clean', rules: 'remove_duplicates,validate_emails', validateData: true },
       position: { x: 400, y: 150 },
       status: 'running'
     },
@@ -41,22 +43,27 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
       id: '3',
       type: 'destination',
       name: 'Data Warehouse',
-      config: { destination: 'snowflake', table: 'customers' },
+      config: { destinationType: 'database', connection: 'snowflake://warehouse', target: 'customers' },
       position: { x: 700, y: 150 },
       status: 'idle'
     }
   ])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [configModalNode, setConfigModalNode] = useState<PipelineNode | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const { toast } = useToast()
 
-  const addNode = (type: 'source' | 'transform' | 'destination') => {
+  const addNode = (type: 'source' | 'transform' | 'destination', componentName?: string) => {
+    const name = componentName || `New ${type}`
     const newNode: PipelineNode = {
       id: Date.now().toString(),
       type,
-      name: `New ${type}`,
+      name,
       config: {},
-      position: { x: Math.random() * 500 + 100, y: Math.random() * 200 + 100 },
+      position: { 
+        x: Math.random() * 400 + 100, 
+        y: Math.random() * 200 + 100 
+      },
       status: 'idle'
     }
     
@@ -65,8 +72,22 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
     
     toast({
       title: "Node Added",
-      description: `${type} node added to pipeline`
+      description: `${name} added to pipeline`
     })
+  }
+
+  const addSelectedComponent = () => {
+    if (!selectedComponent) return
+    
+    const [category, componentName] = selectedComponent.split('-')
+    let nodeType: 'source' | 'transform' | 'destination' = 'transform'
+    
+    if (category.includes('Sources')) nodeType = 'source'
+    else if (category.includes('Destinations')) nodeType = 'destination'
+    else if (category.includes('Quality') || category.includes('Analytics')) nodeType = 'transform'
+    
+    addNode(nodeType, componentName)
+    onComponentUsed?.()
   }
 
   const deleteNode = (nodeId: string) => {
@@ -78,7 +99,31 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
     })
   }
 
+  const openNodeConfig = (node: PipelineNode) => {
+    setConfigModalNode(node)
+  }
+
+  const saveNodeConfig = (config: any) => {
+    if (!configModalNode) return
+    
+    setNodes(prev => prev.map(node => 
+      node.id === configModalNode.id 
+        ? { ...node, config, name: config.name || node.name }
+        : node
+    ))
+    setConfigModalNode(null)
+  }
+
   const runPipeline = async () => {
+    if (nodes.length === 0) {
+      toast({
+        title: "No Nodes",
+        description: "Add some nodes to your pipeline first",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsRunning(true)
     toast({
       title: "Pipeline Started",
@@ -153,6 +198,16 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
               <Server className="h-4 w-4 mr-2" />
               Add Destination
             </Button>
+            {selectedComponent && (
+              <Button 
+                size="sm"
+                variant="default"
+                onClick={addSelectedComponent}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add {selectedComponent.split('-').slice(1).join(' ')}
+              </Button>
+            )}
             <Button 
               size="sm"
               onClick={runPipeline}
@@ -216,42 +271,46 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
                   node.type === 'transform' ? 'text-purple-400' :
                   'text-green-400'
                 }`} />
-                <span className="font-medium text-foreground">{node.name}</span>
+                <span className="font-medium text-foreground text-sm">{node.name}</span>
                 <div className={`h-2 w-2 rounded-full ${getStatusColor(node.status)} ${
                   node.status === 'running' ? 'animate-pulse' : ''
                 }`}></div>
               </div>
               
-              <p className="text-sm text-muted-foreground mb-3">
-                {node.type === 'source' ? 'Data source connector' :
-                 node.type === 'transform' ? 'Data transformation' :
-                 'Data destination'}
+              <p className="text-xs text-muted-foreground mb-3">
+                {Object.keys(node.config).length > 0 ? 'Configured' : 'Not configured'}
               </p>
               
-              <div className="flex gap-1">
+              <div className="flex gap-1 mb-2">
                 <Badge variant="secondary" className="text-xs">
                   {node.status}
                 </Badge>
               </div>
 
-              {selectedNode === node.id && (
-                <div className="flex gap-1 mt-2">
-                  <Button size="sm" variant="outline" className="h-6 px-2">
-                    <Settings className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="h-6 px-2"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteNode(node.id)
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openNodeConfig(node)
+                  }}
+                >
+                  <Settings className="h-3 w-3" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteNode(node.id)
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
             </Card>
           )
         })}
@@ -266,6 +325,14 @@ export function PipelineCanvas({ onNodeAdd }: PipelineCanvasProps) {
           </div>
         )}
       </div>
+
+      {/* Node Configuration Modal */}
+      <NodeConfigModal 
+        isOpen={!!configModalNode}
+        onClose={() => setConfigModalNode(null)}
+        node={configModalNode}
+        onSave={saveNodeConfig}
+      />
     </div>
   )
 }

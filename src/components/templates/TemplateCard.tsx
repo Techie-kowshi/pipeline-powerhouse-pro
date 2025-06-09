@@ -25,31 +25,48 @@ export function TemplateCard({ template, onUse, onPreview }: TemplateCardProps) 
   const { toast } = useToast()
 
   const handleUseTemplate = () => {
-    toast({
-      title: "Template Applied",
-      description: `${template.name} has been added to your pipeline builder`,
-    })
     onUse?.(template)
   }
 
   const handlePreview = () => {
-    toast({
-      title: "Template Preview",
-      description: `Opening preview for ${template.name}`,
-    })
     onPreview?.(template)
   }
 
   const handleDownload = () => {
-    // Simulate template download
+    // Create a more comprehensive template structure
     const templateData = {
       ...template,
+      version: "1.0",
       pipeline: {
         nodes: [
-          { type: 'source', name: template.sources[0] || 'Data Source' },
-          { type: 'transform', name: 'Data Processor' },
-          { type: 'destination', name: template.destinations[0] || 'Data Warehouse' }
-        ]
+          ...template.sources.map((source, index) => ({
+            id: `source-${index}`,
+            type: 'source',
+            name: source,
+            config: {},
+            position: { x: 100 + (index * 300), y: 100 }
+          })),
+          {
+            id: 'transform-1',
+            type: 'transform', 
+            name: 'Data Processor',
+            config: {},
+            position: { x: 400, y: 200 }
+          },
+          ...template.destinations.map((dest, index) => ({
+            id: `dest-${index}`,
+            type: 'destination',
+            name: dest,
+            config: {},
+            position: { x: 700 + (index * 300), y: 100 }
+          }))
+        ],
+        connections: []
+      },
+      metadata: {
+        created: new Date().toISOString(),
+        author: "DataFlow Pro",
+        tags: [template.category.toLowerCase()]
       }
     }
     

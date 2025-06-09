@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { PipelineCanvas } from "@/components/builder/PipelineCanvas"
@@ -90,6 +89,7 @@ export default function PipelineBuilder() {
   const [schedule, setSchedule] = useState("0 0 * * *")
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [pipelineNodes, setPipelineNodes] = useState<PipelineNode[]>([])
+  const [isSaved, setIsSaved] = useState(true)
 
   // Load template data if navigated from templates
   useEffect(() => {
@@ -145,6 +145,29 @@ export default function PipelineBuilder() {
   }, [location.state, toast])
 
   const handleSave = () => {
+    // Simulate saving pipeline to backend
+    const pipelineData = {
+      name: pipelineName,
+      description,
+      schedule,
+      nodes: pipelineNodes,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    }
+    
+    // Save to localStorage for demo purposes
+    const savedPipelines = JSON.parse(localStorage.getItem('savedPipelines') || '[]')
+    const existingIndex = savedPipelines.findIndex((p: any) => p.name === pipelineName)
+    
+    if (existingIndex >= 0) {
+      savedPipelines[existingIndex] = { ...pipelineData, updated: new Date().toISOString() }
+    } else {
+      savedPipelines.push(pipelineData)
+    }
+    
+    localStorage.setItem('savedPipelines', JSON.stringify(savedPipelines))
+    setIsSaved(true)
+    
     toast({
       title: "Pipeline Saved",
       description: `Pipeline "${pipelineName}" has been saved successfully`,
@@ -152,6 +175,16 @@ export default function PipelineBuilder() {
   }
 
   const handleRun = () => {
+    if (pipelineNodes.length === 0) {
+      toast({
+        title: "No Pipeline",
+        description: "Add some nodes to your pipeline before running",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Simulate running pipeline
     toast({
       title: "Pipeline Started",
       description: `Pipeline "${pipelineName}" is now running`,
@@ -160,14 +193,32 @@ export default function PipelineBuilder() {
 
   const handleComponentSelect = (categoryName: string, componentName: string) => {
     setSelectedComponent(`${categoryName}-${componentName}`)
-    toast({
-      title: "Component Selected",
-      description: `${componentName} from ${categoryName} is ready to be added`,
-    })
+  }
+
+  const handleComponentUsed = () => {
+    setSelectedComponent(null)
+    setIsSaved(false)
   }
 
   const handleNodeAdd = (node: PipelineNode) => {
     setPipelineNodes(prev => [...prev, node])
+    setIsSaved(false)
+  }
+
+  // Mark as unsaved when pipeline properties change
+  const handleNameChange = (value: string) => {
+    setPipelineName(value)
+    setIsSaved(false)
+  }
+
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value)
+    setIsSaved(false)
+  }
+
+  const handleScheduleChange = (value: string) => {
+    setSchedule(value)
+    setIsSaved(false)
   }
 
   return (
@@ -189,9 +240,13 @@ export default function PipelineBuilder() {
               </Button>
             }
           />
-          <Button variant="outline" onClick={handleSave}>
+          <Button 
+            variant="outline" 
+            onClick={handleSave}
+            disabled={isSaved}
+          >
             <Save className="h-4 w-4 mr-2" />
-            Save
+            {isSaved ? 'Saved' : 'Save'}
           </Button>
           <Button onClick={handleRun}>
             <Play className="h-4 w-4 mr-2" />
@@ -204,7 +259,11 @@ export default function PipelineBuilder() {
       <div className="flex-1 grid grid-cols-12 gap-6">
         {/* Pipeline Canvas */}
         <div className="col-span-9">
-          <PipelineCanvas onNodeAdd={handleNodeAdd} />
+          <PipelineCanvas 
+            onNodeAdd={handleNodeAdd}
+            selectedComponent={selectedComponent}
+            onComponentUsed={handleComponentUsed}
+          />
         </div>
 
         {/* Properties Panel */}
@@ -219,7 +278,7 @@ export default function PipelineBuilder() {
                 <Input 
                   id="pipeline-name" 
                   value={pipelineName}
-                  onChange={(e) => setPipelineName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   className="mt-1"
                 />
               </div>
@@ -229,7 +288,7 @@ export default function PipelineBuilder() {
                   id="description" 
                   placeholder="Describe your pipeline..." 
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
                   className="mt-1"
                 />
               </div>
@@ -238,7 +297,7 @@ export default function PipelineBuilder() {
                 <Input 
                   id="schedule" 
                   value={schedule}
-                  onChange={(e) => setSchedule(e.target.value)}
+                  onChange={(e) => handleScheduleChange(e.target.value)}
                   placeholder="Cron expression"
                   className="mt-1"
                 />
