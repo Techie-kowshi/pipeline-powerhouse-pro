@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { ConnectionManager } from "@/components/connections/ConnectionManager"
 import { DataSourceCard } from "@/components/sources/DataSourceCard"
@@ -12,6 +11,9 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, Upload, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { DataSource } from "@/types/dataSource"
+import { RealTimeDataFlow } from "@/components/sources/RealTimeDataFlow"
+import { CloudIntegrations } from "@/components/sources/CloudIntegrations"
+import { WaterfallDataFlow } from "@/components/sources/WaterfallDataFlow"
 
 export default function DataSources() {
   const [filter, setFilter] = useState("all")
@@ -153,7 +155,7 @@ export default function DataSources() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Data Sources</h1>
           <p className="text-muted-foreground mt-2">
-            Connect and manage your data sources
+            Connect and manage your data sources with real-time monitoring
           </p>
         </div>
         <div className="flex gap-2">
@@ -184,6 +186,9 @@ export default function DataSources() {
         <TabsList>
           <TabsTrigger value="sources">Data Sources</TabsTrigger>
           <TabsTrigger value="connections">Connections</TabsTrigger>
+          <TabsTrigger value="realtime">Real-Time Flow</TabsTrigger>
+          <TabsTrigger value="cloud">Cloud Integrations</TabsTrigger>
+          <TabsTrigger value="pipeline">Data Pipeline</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sources" className="space-y-6">
@@ -247,6 +252,18 @@ export default function DataSources() {
 
         <TabsContent value="connections" className="space-y-6">
           <ConnectionManager />
+        </TabsContent>
+
+        <TabsContent value="realtime" className="space-y-6">
+          <RealTimeDataFlow />
+        </TabsContent>
+
+        <TabsContent value="cloud" className="space-y-6">
+          <CloudIntegrations />
+        </TabsContent>
+
+        <TabsContent value="pipeline" className="space-y-6">
+          <WaterfallDataFlow />
         </TabsContent>
       </Tabs>
     </div>
