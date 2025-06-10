@@ -11,16 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, Upload, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { DataSource } from "@/types/dataSource"
 
 export default function DataSources() {
   const [filter, setFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
-  const [dataSources, setDataSources] = useState([
+  const [dataSources, setDataSources] = useState<DataSource[]>([
     {
       id: "1",
       name: "Production Database",
       type: "Database",
-      status: "connected" as const,
+      status: "connected",
       description: "Main PostgreSQL database containing customer and order data",
       lastSync: "2 minutes ago",
       recordCount: "2.4M records",
@@ -30,7 +31,7 @@ export default function DataSources() {
       id: "2",
       name: "Analytics API",
       type: "API",
-      status: "connected" as const,
+      status: "connected",
       description: "Google Analytics data via REST API for website metrics",
       lastSync: "15 minutes ago",
       recordCount: "890K events",
@@ -40,7 +41,7 @@ export default function DataSources() {
       id: "3",
       name: "CRM System",
       type: "Cloud",
-      status: "disconnected" as const,
+      status: "disconnected",
       description: "Salesforce CRM data including leads and opportunities",
       lastSync: "2 hours ago",
       recordCount: "156K contacts",
@@ -50,7 +51,7 @@ export default function DataSources() {
       id: "4",
       name: "File Storage",
       type: "Cloud",
-      status: "error" as const,
+      status: "error",
       description: "AWS S3 bucket containing CSV exports and log files",
       lastSync: "1 day ago",
       recordCount: "45GB files",
@@ -87,7 +88,7 @@ export default function DataSources() {
       setDataSources(prev => prev.map(s => 
         s.id === sourceId ? { 
           ...s, 
-          status: success ? 'connected' : 'error',
+          status: (success ? 'connected' : 'error') as const,
           lastSync: success ? 'Just now' : s.lastSync
         } : s
       ))
@@ -127,11 +128,11 @@ export default function DataSources() {
   }
 
   const handleAddDataSource = () => {
-    const newSource = {
+    const newSource: DataSource = {
       id: `ds-${Date.now()}`,
       name: `New Data Source ${dataSources.length + 1}`,
       type: "Database",
-      status: "disconnected" as const,
+      status: "disconnected",
       description: "Configure this data source",
       lastSync: "Never",
       recordCount: "0 records",

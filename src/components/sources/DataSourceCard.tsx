@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,18 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Database, Cloud, Globe, Server, Settings, TestTube, RefreshCw, Trash2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { DataSource } from "@/types/dataSource"
 
 interface DataSourceCardProps {
-  source: {
-    id: string
-    name: string
-    type: string
-    status: "connected" | "disconnected" | "error" | "testing"
-    description: string
-    lastSync: string
-    recordCount: string
-    connectionString?: string
-  }
+  source: DataSource
   onTestConnection?: (id: string) => void
   onSync?: (id: string) => void
 }
