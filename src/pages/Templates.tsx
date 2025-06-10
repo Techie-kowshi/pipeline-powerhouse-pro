@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { TemplateCard } from "@/components/templates/TemplateCard"
@@ -131,7 +130,7 @@ const templates: Template[] = [
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
   const navigate = useNavigate()
 
@@ -140,7 +139,7 @@ export default function Templates() {
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !selectedCategory || template.category === selectedCategory
+    const matchesCategory = selectedCategory === "all" || template.category === selectedCategory
     return matchesSearch && matchesCategory
   })
 
@@ -186,7 +185,7 @@ export default function Templates() {
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categories.map(category => (
               <SelectItem key={category} value={category}>{category}</SelectItem>
             ))}
@@ -197,9 +196,9 @@ export default function Templates() {
       {/* Category Badges */}
       <div className="flex flex-wrap gap-2">
         <Badge 
-          variant={selectedCategory === "" ? "default" : "outline"}
+          variant={selectedCategory === "all" ? "default" : "outline"}
           className="cursor-pointer"
-          onClick={() => setSelectedCategory("")}
+          onClick={() => setSelectedCategory("all")}
         >
           All ({templates.length})
         </Badge>
