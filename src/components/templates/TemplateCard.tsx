@@ -5,20 +5,29 @@ import { Badge } from "@/components/ui/badge"
 import { FileCode, Clock, Star, Download, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-interface TemplateCardProps {
-  template: {
+interface Template {
+  id: string
+  name: string
+  description: string
+  category: string
+  estimatedTime: string
+  rating: number
+  uses: number
+  sources: string[]
+  destinations: string[]
+  nodes?: Array<{
     id: string
+    type: 'source' | 'transform' | 'destination'
     name: string
-    description: string
-    category: string
-    estimatedTime: string
-    rating: number
-    uses: number
-    sources: string[]
-    destinations: string[]
-  }
-  onUse?: (template: any) => void
-  onPreview?: (template: any) => void
+    config: any
+    position: { x: number; y: number }
+  }>
+}
+
+interface TemplateCardProps {
+  template: Template
+  onUse?: (template: Template) => void
+  onPreview?: (template: Template) => void
 }
 
 export function TemplateCard({ template, onUse, onPreview }: TemplateCardProps) {
@@ -38,24 +47,24 @@ export function TemplateCard({ template, onUse, onPreview }: TemplateCardProps) 
       ...template,
       version: "1.0",
       pipeline: {
-        nodes: [
+        nodes: template.nodes || [
           ...template.sources.map((source, index) => ({
             id: `source-${index}`,
-            type: 'source',
+            type: 'source' as const,
             name: source,
             config: {},
             position: { x: 100 + (index * 300), y: 100 }
           })),
           {
             id: 'transform-1',
-            type: 'transform', 
+            type: 'transform' as const, 
             name: 'Data Processor',
             config: {},
             position: { x: 400, y: 200 }
           },
           ...template.destinations.map((dest, index) => ({
             id: `dest-${index}`,
-            type: 'destination',
+            type: 'destination' as const,
             name: dest,
             config: {},
             position: { x: 700 + (index * 300), y: 100 }

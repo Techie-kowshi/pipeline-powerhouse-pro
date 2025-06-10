@@ -6,23 +6,44 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Database, FileCode, Server, ArrowRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+interface Template {
+  id: string
+  name: string
+  description: string
+  category: string
+  estimatedTime: string
+  rating: number
+  uses: number
+  sources: string[]
+  destinations: string[]
+  nodes?: Array<{
+    id: string
+    type: 'source' | 'transform' | 'destination'
+    name: string
+    config: any
+    position: { x: number; y: number }
+  }>
+}
+
 interface TemplatePreviewModalProps {
   isOpen: boolean
   onClose: () => void
-  template: any
-  onUse?: (template: any) => void
+  template: Template | null
+  onUse?: (template: Template) => void
 }
 
 export function TemplatePreviewModal({ isOpen, onClose, template, onUse }: TemplatePreviewModalProps) {
   const { toast } = useToast()
 
   const handleUse = () => {
-    onUse?.(template)
-    toast({
-      title: "Template Applied",
-      description: `${template.name} has been loaded into the pipeline builder`
-    })
-    onClose()
+    if (template) {
+      onUse?.(template)
+      toast({
+        title: "Template Applied",
+        description: `${template.name} has been loaded into the pipeline builder`
+      })
+      onClose()
+    }
   }
 
   if (!template) return null

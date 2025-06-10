@@ -9,7 +9,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter } from "lucide-react"
 
-const templates = [
+interface Template {
+  id: string
+  name: string
+  description: string
+  category: string
+  estimatedTime: string
+  rating: number
+  uses: number
+  sources: string[]
+  destinations: string[]
+  nodes: Array<{
+    id: string
+    type: 'source' | 'transform' | 'destination'
+    name: string
+    config: any
+    position: { x: number; y: number }
+  }>
+}
+
+const templates: Template[] = [
   {
     id: "1",
     name: "E-commerce Analytics Pipeline",
@@ -113,7 +132,7 @@ const templates = [
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
-  const [previewTemplate, setPreviewTemplate] = useState<any>(null)
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
   const navigate = useNavigate()
 
   const categories = [...new Set(templates.map(t => t.category))]
@@ -125,11 +144,11 @@ export default function Templates() {
     return matchesSearch && matchesCategory
   })
 
-  const handleUseTemplate = (template: any) => {
+  const handleUseTemplate = (template: Template) => {
     navigate('/builder', { state: { template } })
   }
 
-  const handlePreviewTemplate = (template: any) => {
+  const handlePreviewTemplate = (template: Template) => {
     setPreviewTemplate(template)
   }
 
