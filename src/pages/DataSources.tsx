@@ -74,7 +74,7 @@ export default function DataSources() {
 
     // Update status to testing
     setDataSources(prev => prev.map(s => 
-      s.id === sourceId ? { ...s, status: 'testing' as const } : s
+      s.id === sourceId ? { ...s, status: 'testing' } : s
     ))
 
     toast({
@@ -88,7 +88,7 @@ export default function DataSources() {
       setDataSources(prev => prev.map(s => 
         s.id === sourceId ? { 
           ...s, 
-          status: (success ? 'connected' : 'error') as const,
+          status: success ? 'connected' : 'error',
           lastSync: success ? 'Just now' : s.lastSync
         } : s
       ))
