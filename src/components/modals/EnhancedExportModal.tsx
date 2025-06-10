@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
-import { Download, FileText, Database, Cloud, Globe } from "lucide-react"
+import { Download, Database, Cloud, FileText, Globe } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface EnhancedExportModalProps {
@@ -16,110 +15,123 @@ interface EnhancedExportModalProps {
 
 export function EnhancedExportModal({ trigger }: EnhancedExportModalProps) {
   const [exportType, setExportType] = useState<string>("")
-  const [destination, setDestination] = useState<string>("download")
-  const [connectionString, setConnectionString] = useState("")
-  const [apiEndpoint, setApiEndpoint] = useState("")
-  const [fileName, setFileName] = useState("export_data")
-  const [includeHeaders, setIncludeHeaders] = useState(true)
-  const [compress, setCompress] = useState(false)
-  const [customQuery, setCustomQuery] = useState("")
+  const [fileName, setFileName] = useState("data_export")
+  const [format, setFormat] = useState("csv")
+  const [connectionString, setConnectionString] = useState<string>("")
+  const [query, setQuery] = useState<string>("SELECT * FROM table_name")
+  const [isExporting, setIsExporting] = useState(false)
   const { toast } = useToast()
-
-  const handleExport = () => {
-    if (!exportType) {
-      toast({
-        title: "Error",
-        description: "Please select an export format",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (destination === "database" && !connectionString) {
-      toast({
-        title: "Error",
-        description: "Please provide a database connection string",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (destination === "api" && !apiEndpoint) {
-      toast({
-        title: "Error",
-        description: "Please provide an API endpoint",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Simulate export process
-    toast({
-      title: "Export Started",
-      description: `Preparing ${exportType} export to ${destination}...`,
-    })
-
-    setTimeout(() => {
-      if (destination === "download") {
-        // Create and download file
-        const data = generateSampleData()
-        const blob = new Blob([data], { type: getContentType(exportType) })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${fileName}.${getFileExtension(exportType)}`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
-
-      toast({
-        title: "Export Complete",
-        description: `Data exported successfully as ${exportType} to ${destination}`,
-      })
-    }, 2000)
-  }
 
   const generateSampleData = () => {
     const sampleData = [
-      { id: 1, name: "John Doe", email: "john@example.com", status: "active" },
-      { id: 2, name: "Jane Smith", email: "jane@example.com", status: "inactive" },
-      { id: 3, name: "Bob Johnson", email: "bob@example.com", status: "active" }
+      { id: 1, name: "John Doe", email: "john@example.com", city: "New York" },
+      { id: 2, name: "Jane Smith", email: "jane@example.com", city: "Los Angeles" },
+      { id: 3, name: "Bob Johnson", email: "bob@example.com", city: "Chicago" },
+      { id: 4, name: "Alice Brown", email: "alice@example.com", city: "Houston" },
+      { id: 5, name: "Charlie Wilson", email: "charlie@example.com", city: "Phoenix" }
     ]
+    return sampleData
+  }
 
-    switch (exportType) {
+  const downloadFile = (data: any, filename: string, format: string) => {
+    let content = ""
+    let mimeType = ""
+    
+    switch (format) {
       case "csv":
-        const headers = includeHeaders ? "id,name,email,status\n" : ""
-        return headers + sampleData.map(row => `${row.id},${row.name},${row.email},${row.status}`).join("\n")
+        const headers = Object.keys(data[0]).join(",")
+        const rows = data.map((row: any) => Object.values(row).join(","))
+        content = [headers, ...rows].join("\n")
+        mimeType = "text/csv"
+        filename += ".csv"
+        break
+        
       case "json":
-        return JSON.stringify(sampleData, null, 2)
-      case "sql":
-        return sampleData.map(row => 
-          `INSERT INTO users (id, name, email, status) VALUES (${row.id}, '${row.name}', '${row.email}', '${row.status}');`
-        ).join("\n")
-      default:
-        return JSON.stringify(sampleData, null, 2)
+        content = JSON.stringify(data, null, 2)
+        mimeType = "application/json"
+        filename += ".json"
+        break
+        
+      case "xml":
+        const xmlRows = data.map((row: any) => {
+          const xmlFields = Object.entries(row)
+            .map(([key, value]) => `    <${key}>${value}</${key}>`)
+            .join("\n")
+          return `  <record>\n${xmlFields}\n  </record>`
+        }).join("\n")
+        content = `<?xml version="1.0" encoding="UTF-8"?>\n<data>\n${xmlRows}\n</data>`
+        mimeType = "application/xml"
+        filename += ".xml"
+        break
     }
+
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
-  const getContentType = (type: string) => {
-    switch (type) {
-      case "csv": return "text/csv"
-      case "json": return "application/json"
-      case "sql": return "text/plain"
-      case "excel": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      default: return "text/plain"
+  const handleExport = async () => {
+    if (!exportType) {
+      toast({
+        title: "Error",
+        description: "Please select an export type",
+        variant: "destructive",
+      })
+      return
     }
-  }
 
-  const getFileExtension = (type: string) => {
-    switch (type) {
-      case "csv": return "csv"
-      case "json": return "json"
-      case "sql": return "sql"
-      case "excel": return "xlsx"
-      default: return "txt"
+    if (exportType === "file" && !fileName) {
+      toast({
+        title: "Error",
+        description: "Please enter a filename",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsExporting(true)
+    
+    try {
+      toast({
+        title: "Export Started",
+        description: `Starting ${exportType} export...`,
+      })
+
+      // Simulate export process
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      const sampleData = generateSampleData()
+      
+      if (exportType === "file") {
+        // Download to user's device
+        downloadFile(sampleData, fileName, format)
+        
+        toast({
+          title: "Export Complete",
+          description: `File ${fileName}.${format} has been downloaded to your device`
+        })
+      } else {
+        // Simulate database/API export
+        const recordCount = sampleData.length
+        toast({
+          title: "Export Complete",
+          description: `Successfully exported ${recordCount} records to ${exportType}`
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Could not complete export. Please check your settings.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -137,124 +149,107 @@ export function EnhancedExportModal({ trigger }: EnhancedExportModalProps) {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="export-type">Export Format</Label>
+            <Label htmlFor="export-type">Export Destination</Label>
             <Select value={exportType} onValueChange={setExportType}>
               <SelectTrigger>
-                <SelectValue placeholder="Select export format" />
+                <SelectValue placeholder="Select export destination" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="csv">
+                <SelectItem value="file">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    CSV File
+                    Download to Device
                   </div>
                 </SelectItem>
-                <SelectItem value="excel">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Excel (XLSX)
-                  </div>
-                </SelectItem>
-                <SelectItem value="json">
-                  <div className="flex items-center gap-2">
-                    <Cloud className="h-4 w-4" />
-                    JSON
-                  </div>
-                </SelectItem>
-                <SelectItem value="sql">
+                <SelectItem value="database">
                   <div className="flex items-center gap-2">
                     <Database className="h-4 w-4" />
-                    SQL Dump
+                    Database
+                  </div>
+                </SelectItem>
+                <SelectItem value="api">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    API Endpoint
+                  </div>
+                </SelectItem>
+                <SelectItem value="cloud">
+                  <div className="flex items-center gap-2">
+                    <Cloud className="h-4 w-4" />
+                    Cloud Storage
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="destination">Export Destination</Label>
-            <Select value={destination} onValueChange={setDestination}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="download">Download to Device</SelectItem>
-                <SelectItem value="database">Database Connection</SelectItem>
-                <SelectItem value="api">API Endpoint</SelectItem>
-                <SelectItem value="cloud">Cloud Storage</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {destination === "download" && (
-            <div>
-              <Label htmlFor="filename">File Name</Label>
-              <Input 
-                id="filename"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                placeholder="export_data"
-              />
-            </div>
+          {exportType === "file" && (
+            <>
+              <div>
+                <Label htmlFor="filename">File Name</Label>
+                <Input 
+                  id="filename"
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  placeholder="Enter filename (without extension)"
+                />
+              </div>
+              <div>
+                <Label htmlFor="format">File Format</Label>
+                <Select value={format} onValueChange={setFormat}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="json">JSON</SelectItem>
+                    <SelectItem value="xml">XML</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
-          {destination === "database" && (
-            <div>
-              <Label htmlFor="connection">Database Connection String</Label>
-              <Input 
-                id="connection"
-                value={connectionString}
-                onChange={(e) => setConnectionString(e.target.value)}
-                placeholder="mongodb://localhost:27017/mydb or postgresql://user:pass@host:5432/db"
-              />
-            </div>
+          {(exportType === "database" || exportType === "api" || exportType === "cloud") && (
+            <>
+              <div>
+                <Label htmlFor="connection">Connection String</Label>
+                <Input 
+                  id="connection"
+                  placeholder={
+                    exportType === "database" 
+                      ? "postgresql://user:pass@host:port/database"
+                      : exportType === "api"
+                      ? "https://api.example.com/endpoint"
+                      : "s3://bucket-name/path or gs://bucket/path"
+                  }
+                  value={connectionString}
+                  onChange={(e) => setConnectionString(e.target.value)}
+                />
+              </div>
+              {exportType === "database" && (
+                <div>
+                  <Label htmlFor="query">SQL Query</Label>
+                  <Textarea
+                    id="query"
+                    placeholder="INSERT INTO table_name (columns) VALUES ..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              )}
+            </>
           )}
-
-          {destination === "api" && (
-            <div>
-              <Label htmlFor="api-endpoint">API Endpoint</Label>
-              <Input 
-                id="api-endpoint"
-                value={apiEndpoint}
-                onChange={(e) => setApiEndpoint(e.target.value)}
-                placeholder="https://api.example.com/data"
-              />
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="custom-query">Custom Query (Optional)</Label>
-            <Textarea 
-              id="custom-query"
-              value={customQuery}
-              onChange={(e) => setCustomQuery(e.target.value)}
-              placeholder="SELECT * FROM users WHERE status = 'active'"
-              className="min-h-20"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="headers" 
-                checked={includeHeaders}
-                onCheckedChange={(checked) => setIncludeHeaders(checked === true)}
-              />
-              <Label htmlFor="headers">Include column headers</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="compress" 
-                checked={compress}
-                onCheckedChange={(checked) => setCompress(checked === true)}
-              />
-              <Label htmlFor="compress">Compress output (ZIP)</Label>
-            </div>
-          </div>
 
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleExport} className="flex-1">
-              Export Data
+            <Button 
+              onClick={handleExport} 
+              className="flex-1"
+              disabled={isExporting}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Exporting..." : "Start Export"}
             </Button>
           </div>
         </div>

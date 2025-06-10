@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Save, Play, Settings, Database, FileCode, Server, Filter, BarChart } from "lucide-react"
+import { Save, Play, Settings, Database, FileCode, Server, Filter, BarChart, Bot, Sparkles } from "lucide-react"
 import { PipelineConfigModal } from "@/components/modals/PipelineConfigModal"
+import { AIAssistantModal } from "@/components/modals/AIAssistantModal"
 import { useToast } from "@/hooks/use-toast"
 
 interface PipelineNode {
@@ -92,6 +93,7 @@ export default function PipelineBuilder() {
   const [pipelineNodes, setPipelineNodes] = useState<PipelineNode[]>([])
   const [isSaved, setIsSaved] = useState(true)
   const [templateNodes, setTemplateNodes] = useState<any[]>([])
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
 
   // Load template data if navigated from templates
   useEffect(() => {
@@ -185,6 +187,69 @@ export default function PipelineBuilder() {
     setIsSaved(false)
   }
 
+  const handleNodesChange = (nodes: any[]) => {
+    const convertedNodes: PipelineNode[] = nodes.map(node => ({
+      id: node.id,
+      type: node.data?.type || 'transform',
+      name: node.data?.name || 'Unknown',
+      config: node.data?.config || {},
+      position: node.position,
+      status: node.data?.status || 'idle'
+    }))
+    setPipelineNodes(convertedNodes)
+    setIsSaved(false)
+  }
+
+  const handleAIGeneration = (suggestion: any) => {
+    const newNodes = []
+    
+    // Add source nodes
+    suggestion.sources?.forEach((source: any, index: number) => {
+      newNodes.push({
+        id: `ai-source-${index}`,
+        type: 'source',
+        name: source.name,
+        config: source.config || {},
+        position: { x: 100 + (index * 200), y: 100 },
+        status: 'idle'
+      })
+    })
+    
+    // Add transform nodes
+    suggestion.transforms?.forEach((transform: any, index: number) => {
+      newNodes.push({
+        id: `ai-transform-${index}`,
+        type: 'transform',
+        name: transform.name,
+        config: transform.config || {},
+        position: { x: 400, y: 100 + (index * 150) },
+        status: 'idle'
+      })
+    })
+    
+    // Add destination nodes
+    suggestion.destinations?.forEach((dest: any, index: number) => {
+      newNodes.push({
+        id: `ai-dest-${index}`,
+        type: 'destination',
+        name: dest.name,
+        config: dest.config || {},
+        position: { x: 700 + (index * 200), y: 100 },
+        status: 'idle'
+      })
+    })
+    
+    setTemplateNodes(newNodes)
+    setPipelineName(suggestion.name || "AI Generated Pipeline")
+    setDescription(suggestion.description || "Pipeline created with AI assistance")
+    setShowAIAssistant(false)
+    
+    toast({
+      title: "AI Pipeline Generated",
+      description: "Your pipeline has been created with AI suggestions"
+    })
+  }
+
   return (
     <div className="h-full flex flex-col gap-6">
       {/* Header */}
@@ -196,6 +261,14 @@ export default function PipelineBuilder() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAIAssistant(true)}
+            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-none hover:from-purple-600 hover:to-blue-600"
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            AI Assistant
+          </Button>
           <PipelineConfigModal
             trigger={
               <Button variant="outline">
@@ -223,7 +296,7 @@ export default function PipelineBuilder() {
             selectedComponent={selectedComponent}
             onComponentUsed={handleComponentUsed}
             initialNodes={templateNodes}
-            onNodesChange={setPipelineNodes}
+            onNodesChange={handleNodesChange}
           />
         </div>
 
@@ -354,6 +427,13 @@ export default function PipelineBuilder() {
           </Card>
         </div>
       </div>
+
+      {/* AI Assistant Modal */}
+      <AIAssistantModal 
+        isOpen={showAIAssistant}
+        onClose={() => setShowAIAssistant(false)}
+        onGenerate={handleAIGeneration}
+      />
     </div>
   )
 }
