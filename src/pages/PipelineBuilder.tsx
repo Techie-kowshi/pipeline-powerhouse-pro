@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { DraggablePipelineCanvas } from "@/components/builder/DraggablePipelineCanvas"
@@ -94,24 +93,33 @@ export default function PipelineBuilder() {
   const [isSaved, setIsSaved] = useState(true)
   const [templateNodes, setTemplateNodes] = useState<any[]>([])
   const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [canvasKey, setCanvasKey] = useState(0) // Force canvas refresh
 
   // Load template data if navigated from templates
   useEffect(() => {
     const template = location.state?.template
     if (template) {
+      console.log('Loading template:', template)
+      
       setPipelineName(template.name)
       setDescription(template.description)
       
-      // Use template nodes if available
-      if (template.nodes) {
-        setTemplateNodes(template.nodes)
+      // Convert template to proper node format
+      let processedNodes: any[] = []
+      
+      if (template.nodes && template.nodes.length > 0) {
+        // Use existing nodes if available
+        processedNodes = template.nodes.map((node: any) => ({
+          ...node,
+          status: 'idle'
+        }))
       } else {
-        // Fallback to creating nodes from sources/destinations
-        const nodes: any[] = []
+        // Create nodes from sources/destinations
+        let nodeIndex = 0
         
         template.sources?.forEach((source: string, index: number) => {
-          nodes.push({
-            id: `source-${index}`,
+          processedNodes.push({
+            id: `template-source-${nodeIndex++}`,
             type: 'source',
             name: source,
             config: {},
@@ -120,18 +128,20 @@ export default function PipelineBuilder() {
           })
         })
         
-        nodes.push({
-          id: 'transform-1',
-          type: 'transform',
-          name: 'Data Processor',
-          config: {},
-          position: { x: 400, y: 200 },
-          status: 'idle'
-        })
+        if (template.sources && template.sources.length > 0) {
+          processedNodes.push({
+            id: `template-transform-${nodeIndex++}`,
+            type: 'transform',
+            name: 'Data Processor',
+            config: {},
+            position: { x: 400, y: 200 },
+            status: 'idle'
+          })
+        }
         
         template.destinations?.forEach((dest: string, index: number) => {
-          nodes.push({
-            id: `dest-${index}`,
+          processedNodes.push({
+            id: `template-dest-${nodeIndex++}`,
             type: 'destination',
             name: dest,
             config: {},
@@ -139,9 +149,11 @@ export default function PipelineBuilder() {
             status: 'idle'
           })
         })
-        
-        setTemplateNodes(nodes)
       }
+      
+      console.log('Processed template nodes:', processedNodes)
+      setTemplateNodes(processedNodes)
+      setCanvasKey(prev => prev + 1) // Force canvas refresh
       
       toast({
         title: "Template Loaded",
@@ -188,6 +200,7 @@ export default function PipelineBuilder() {
   }
 
   const handleNodesChange = (nodes: any[]) => {
+    console.log('Nodes changed:', nodes)
     const convertedNodes: PipelineNode[] = nodes.map(node => ({
       id: node.id,
       type: node.data?.type || 'transform',
@@ -243,6 +256,7 @@ export default function PipelineBuilder() {
     setPipelineName(suggestion.name || "AI Generated Pipeline")
     setDescription(suggestion.description || "Pipeline created with AI assistance")
     setShowAIAssistant(false)
+    setCanvasKey(prev => prev + 1)
     
     toast({
       title: "AI Pipeline Generated",
@@ -293,6 +307,7 @@ export default function PipelineBuilder() {
         {/* Pipeline Canvas */}
         <div className="col-span-9">
           <DraggablePipelineCanvas 
+            key={canvasKey}
             selectedComponent={selectedComponent}
             onComponentUsed={handleComponentUsed}
             initialNodes={templateNodes}

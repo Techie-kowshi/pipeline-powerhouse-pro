@@ -127,18 +127,25 @@ export function DraggablePipelineCanvas({
 
   // Load initial nodes
   useEffect(() => {
+    console.log('DraggablePipelineCanvas: Received initial nodes:', initialNodes)
+    
     if (initialNodes.length > 0) {
-      const flowNodes = initialNodes.map((node, index) => ({
-        id: node.id || `node-${index}`,
-        type: 'pipelineNode',
-        position: node.position || { x: 100 + index * 250, y: 100 },
-        data: {
-          name: node.name,
-          type: node.type,
-          config: node.config || {},
-          status: 'idle'
+      const flowNodes = initialNodes.map((node, index) => {
+        console.log('Converting node:', node)
+        return {
+          id: node.id || `node-${index}`,
+          type: 'pipelineNode',
+          position: node.position || { x: 100 + index * 250, y: 100 },
+          data: {
+            name: node.name,
+            type: node.type,
+            config: node.config || {},
+            status: node.status || 'idle'
+          }
         }
-      }))
+      })
+      
+      console.log('Setting flow nodes:', flowNodes)
       setNodes(flowNodes)
       
       // Create connections between consecutive nodes
@@ -152,7 +159,12 @@ export function DraggablePipelineCanvas({
           markerEnd: { type: MarkerType.ArrowClosed }
         })
       }
+      console.log('Setting edges:', newEdges)
       setEdges(newEdges)
+    } else {
+      // Clear nodes and edges if no initial nodes
+      setNodes([])
+      setEdges([])
     }
   }, [initialNodes, setNodes, setEdges])
 

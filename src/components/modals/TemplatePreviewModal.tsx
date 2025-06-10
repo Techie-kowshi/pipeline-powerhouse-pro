@@ -37,6 +37,7 @@ export function TemplatePreviewModal({ isOpen, onClose, template, onUse }: Templ
 
   const handleUse = () => {
     if (template) {
+      console.log('Using template:', template)
       onUse?.(template)
       toast({
         title: "Template Applied",
@@ -57,9 +58,34 @@ export function TemplatePreviewModal({ isOpen, onClose, template, onUse }: Templ
     }
   }
 
+  // Use actual nodes if available, otherwise create from sources/destinations
+  const previewNodes = template.nodes || [
+    ...template.sources.map((source, index) => ({
+      id: `preview-source-${index}`,
+      type: 'source' as const,
+      name: source,
+      config: {},
+      position: { x: 0, y: 0 }
+    })),
+    {
+      id: 'preview-transform',
+      type: 'transform' as const,
+      name: 'Data Processor',
+      config: {},
+      position: { x: 0, y: 0 }
+    },
+    ...template.destinations.map((dest, index) => ({
+      id: `preview-dest-${index}`,
+      type: 'destination' as const,
+      name: dest,
+      config: {},
+      position: { x: 0, y: 0 }
+    }))
+  ]
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Template Preview: {template.name}</DialogTitle>
         </DialogHeader>
@@ -70,55 +96,31 @@ export function TemplatePreviewModal({ isOpen, onClose, template, onUse }: Templ
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary">{template.category}</Badge>
               <Badge variant="outline">Est. {template.estimatedTime}</Badge>
+              <Badge variant="outline">{template.uses.toLocaleString()} uses</Badge>
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-3">Pipeline Flow</h4>
-            <div className="flex items-center gap-4 overflow-x-auto pb-4">
-              {/* Sources */}
-              {template.sources.map((source: string, index: number) => {
-                const Icon = getNodeIcon('source')
+            <h4 className="font-semibold mb-3">Pipeline Structure</h4>
+            <div className="grid gap-2 max-h-64 overflow-y-auto">
+              {previewNodes.map((node, index) => {
+                const Icon = getNodeIcon(node.type)
                 return (
-                  <div key={`source-${index}`} className="flex items-center gap-2">
-                    <Card className="min-w-32 bg-blue-500/10 border-blue-500/50">
-                      <CardContent className="p-3 text-center">
-                        <Icon className="h-6 w-6 text-blue-400 mx-auto mb-1" />
-                        <p className="text-xs font-medium">{source}</p>
-                        <Badge variant="secondary" className="text-xs mt-1">Source</Badge>
-                      </CardContent>
-                    </Card>
-                    {index < template.sources.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
-                  </div>
-                )
-              })}
-              
-              {/* Transform */}
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Card className="min-w-32 bg-purple-500/10 border-purple-500/50">
-                  <CardContent className="p-3 text-center">
-                    <FileCode className="h-6 w-6 text-purple-400 mx-auto mb-1" />
-                    <p className="text-xs font-medium">Transform</p>
-                    <Badge variant="secondary" className="text-xs mt-1">Process</Badge>
-                  </CardContent>
-                </Card>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-
-              {/* Destinations */}
-              {template.destinations.map((dest: string, index: number) => {
-                const Icon = getNodeIcon('destination')
-                return (
-                  <div key={`dest-${index}`} className="flex items-center gap-2">
-                    <Card className="min-w-32 bg-green-500/10 border-green-500/50">
-                      <CardContent className="p-3 text-center">
-                        <Icon className="h-6 w-6 text-green-400 mx-auto mb-1" />
-                        <p className="text-xs font-medium">{dest}</p>
-                        <Badge variant="secondary" className="text-xs mt-1">Destination</Badge>
-                      </CardContent>
-                    </Card>
-                    {index < template.destinations.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                  <div key={node.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <div className={`p-2 rounded ${
+                      node.type === 'source' ? 'bg-blue-500/10 text-blue-400' :
+                      node.type === 'transform' ? 'bg-purple-500/10 text-purple-400' :
+                      'bg-green-500/10 text-green-400'
+                    }`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{node.name}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{node.type}</div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {node.type}
+                    </Badge>
                   </div>
                 )
               })}
@@ -136,12 +138,12 @@ export function TemplatePreviewModal({ isOpen, onClose, template, onUse }: Templ
               </ul>
             </div>
             <div>
-              <h5 className="font-medium mb-2">Use Cases</h5>
+              <h5 className="font-medium mb-2">Benefits</h5>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Data migration</li>
-                <li>• Real-time analytics</li>
-                <li>• Data synchronization</li>
-                <li>• ETL operations</li>
+                <li>• Quick setup and deployment</li>
+                <li>• Pre-configured best practices</li>
+                <li>• Tested and optimized</li>
+                <li>• Community validated</li>
               </ul>
             </div>
           </div>
